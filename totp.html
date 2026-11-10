@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>动态码生成器</title>
+<style>
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; max-width: 420px; margin: 40px auto; padding: 0 16px; text-align: center; color: #222; }
+  h2 { margin-bottom: 8px; }
+  p.desc { color: #555; font-size: 14px; line-height: 1.6; }
+  input { width: 100%; padding: 10px; box-sizing: border-box; font-size: 15px; font-family: monospace; }
+  #code { font-size: 44px; letter-spacing: 6px; font-variant-numeric: tabular-nums; margin: 28px 0 8px; cursor: pointer; user-select: all; min-height: 52px; }
+  #left { color: #666; font-size: 14px; min-height: 20px; }
+  #error { color: #c0392b; font-size: 14px; min-height: 20px; margin-top: 8px; }
+  .warn { font-size: 12px; color: #888; margin-top: 32px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<h2>动态码生成器</h2>
+<p class="desc">粘贴管理员提供的种子（Base32），页面每 30 秒生成一次 6 位动态码。点击动态码可复制。</p>
+<input id="secret" placeholder="种子，例如 JBSWY3DPEHPK3PXP" autocomplete="off" spellcheck="false">
+<div id="code">------</div>
+<div id="left"></div>
+<div id="error"></div>
+<p class="warn">本页面完全离线运行，不发送任何网络请求，也不会保存你的种子。关闭或刷新页面后需要重新输入。</p>
+
+<script>
+const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+
+// Base32 解码（RFC 4648），忽略空格、连字符和填充符
+function base32ToBytes(input) {
+  const clean = input.toUpperCase().replace(/[\s=-]/g, "");
+  if (!clean) throw new Error("种子为空");
+  let value = 0, bits = 0;
+  const out = [];
+  for (const ch of clean) {
+    const idx = B32.indexOf(ch);
+    if (idx < 0) throw new Error("种子包含非法字符");
+    value = ((value << 5) | idx) & 0xffff;
+    bits += 5;
+    if (bits >= 8) {
+      out.push((value >>> (bits - 8)) & 0xff);
+      bits -= 8;
+    }
+  }
+  return new Uint8Array(out);
+}
+
+// RFC 6238：HMAC-SHA1，30 秒步长，6 位
+async function totpAt(keyBytes, counter) {
+  const key = await crypto.subtle.importKey("raw", keyBytes, { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);
+  const msg = new ArrayBuffer(8);
+  const view = new DataView(msg);
+  view.setUint32(0, Math.floor(counter / 0x100000000));
+  view.setUint32(4, counter >>> 0);
+  const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, msg));
+  const offset = sig[sig.length - 1] & 0x0f;
+  const bin = ((sig[offset] & 0x7f) << 24) | (sig[offset + 1] << 16) | (sig[offset + 2] << 8) | sig[offset + 3];
+  return String(bin % 1000000).padStart(6, "0");
+}
+
+const secretInput = document.getElementById("secret");
+const codeEl = document.getElementById("code");
+const leftEl = document.getElementById("left");
+const errorEl = document.getElementById("error");
+let keyBytes = null;
+
+secretInput.addEventListener("input", () => {
+  errorEl.textContent = "";
+  try {
+    keyBytes = base32ToBytes(secretInput.value);
+  } catch (e) {
+    keyBytes = null;
+    if (secretInput.value.trim()) errorEl.textContent = e.message;
+  }
+  refresh();
+});
+
+async function refresh() {
+  if (!keyBytes) {
+    codeEl.textContent = "------";
+    leftEl.textContent = "";
+    return;
+  }
+  const now = Date.now() / 1000;
+  leftEl.textContent = `剩余 ${Math.ceil(30 - (now % 30))} 秒`;
+  codeEl.textContent = await totpAt(keyBytes, Math.floor(now / 30));
+}
+
+codeEl.addEventListener("click", async () => {
+  if (!/^\d{6}$/.test(codeEl.textContent)) return;
+  try {
+    await navigator.clipboard.writeText(codeEl.textContent);
+    leftEl.textContent = "已复制";
+  } catch (e) {
+    leftEl.textContent = "复制失败，请手动选择";
+  }
+});
+
+setInterval(refresh, 1000);
+</script>
+</body>
+</html>
