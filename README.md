@@ -2,20 +2,20 @@
 
 一个基于 DeepSeek 和 QQ 官方 API 的极简、无沙盒、拥有长期记忆的服务器运维 Agent。
 
-## ✨ 特性
+##  特性
 - **极简原生**：拒绝臃肿的第三方框架，原生 Python 直连 DeepSeek API。
 - **完全放权**：没有沙盒限制，直接调用宿主机 Shell 执行命令。
 - **长期记忆**：通过本地 `agent_memory.md` 文件，永久记住你的工作区和习惯。
 - **多端适配**：原生支持 QQ 频道、群聊、私聊。
 
-> ⚠️ **安全警告**
+>  **安全警告**
 >
 > 本项目会把大模型生成的内容直接交给 `subprocess.check_output(..., shell=True)` 执行，并且默认假设运行环境具有 root 权限。
 > - 只在你完全信任的机器上运行，并且只授权给自己的 openid（`ADMIN_OPENID`）。
 > - 不要把它部署在存有重要数据、生产环境或公网可直接访问的服务器上。
 > - 大模型可能误解指令或被提示注入，生成破坏性命令（如 `rm -rf`）。建议先在虚拟机或容器中试用。
 
-## 🚀 快速启动
+## 快速启动
 
 1. **创建 QQ 机器人**：在 [QQ 开放平台](https://q.qq.com/) 创建机器人，记下 `AppID` 和 `AppSecret`。
 2. **获取 DeepSeek Key**：在 [DeepSeek 开放平台](https://platform.deepseek.com/) 创建 API Key。
@@ -84,7 +84,7 @@ cp .env.example .env
 | `ADMIN_OPENID` | 允许使用机器人的用户 openid。**必须配置**，未配置时机器人会拒绝所有消息 |
 | `ADMIN_TOTP_SECRET` | 动态码种子。**必须配置**，未配置时无法完成认证 |
 
-## 🔐 二次认证（TOTP）
+## 二次认证（TOTP）
 
 每次重启后或认证超过 30 分钟，都需要先通过动态码认证，才能使用机器人。
 
@@ -122,9 +122,9 @@ python -c "import pyotp; print(pyotp.TOTP('你的种子').provisioning_uri(name=
 python agent.py
 ```
 
-看到 `🚀 Agent 启动...` 即表示启动成功。
+看到 `Agent 启动...` 即表示启动成功。
 
-## 🧠 如何让它干活？
+##  如何让它干活？
 
 在 QQ 里 @ 你的机器人：
 
@@ -135,7 +135,7 @@ python agent.py
 
 未认证时，除认证指令外的所有消息都会被拒绝。
 
-## ⚠️ 安全警告
+##  安全警告
 
 本项目给予 Agent 极高的系统权限。请务必配置好 `ADMIN_OPENID`，绝对不要把带有 admin 权限的机器人暴露在公开的、不可信的群聊中。
 
