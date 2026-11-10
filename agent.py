@@ -84,6 +84,8 @@ class MyAgent(botpy.Client):
         sender_id = getattr(message.author, 'member_openid', getattr(message.author, 'user_openid', ''))
         # 未配置 ADMIN_OPENID 时拒绝所有请求（fail closed），避免任何人都能让 root 权限的 Agent 执行命令
         if not ADMIN_OPENID or sender_id != ADMIN_OPENID:
+            # 把发送者的 OpenID 打印到日志，方便首次配置时获取
+            print(f"[AUTH] 拒绝未授权用户，OpenID: {sender_id}（如需授权，请填入 ADMIN_OPENID）")
             return
 
         if user_msg.startswith("#记住") or user_msg.startswith("记住"):
