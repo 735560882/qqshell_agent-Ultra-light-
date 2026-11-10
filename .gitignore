@@ -4,6 +4,9 @@
 # 长期记忆（可能包含隐私信息）
 agent_memory.md
 
+# 运行日志
+agent.log
+
 # Python 缓存与虚拟环境
 __pycache__/
 *.py[cod]

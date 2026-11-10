@@ -15,6 +15,25 @@
 > - 不要把它部署在存有重要数据、生产环境或公网可直接访问的服务器上。
 > - 大模型可能误解指令或被提示注入，生成破坏性命令（如 `rm -rf`）。建议先在虚拟机或容器中试用。
 
+## 🚀 快速启动
+
+1. **创建 QQ 机器人**：在 [QQ 开放平台](https://q.qq.com/) 创建机器人，记下 `AppID` 和 `AppSecret`。
+2. **获取 DeepSeek Key**：在 [DeepSeek 开放平台](https://platform.deepseek.com/) 创建 API Key。
+3. **安装并生成配置**（Debian / Ubuntu）：
+   ```bash
+   git clone https://github.com/735560882/qqshell_agent-ultra-light-.git
+   cd qqshell_agent-ultra-light-
+   bash install.sh
+   ```
+   首次运行会生成 `.env`，然后脚本会提示你编辑它。
+4. **填写 `.env`**：填入 `APP_ID`、`APP_SECRET`、`DS_KEY`，`ADMIN_OPENID` 先留空。
+5. **获取你的 OpenID**：再次执行 `bash install.sh` 启动机器人，在群里或私聊中 @ 它发一条消息，然后查看日志：
+   ```bash
+   tail -f agent.log
+   ```
+   日志中会出现 `[AUTH] 拒绝未授权用户，OpenID: xxx`，把其中的 OpenID 复制到 `.env` 的 `ADMIN_OPENID`。
+6. **重启生效**：再次执行 `bash install.sh`。之后发送的消息就能被执行了。
+
 ## 功能
 
 - 接收 QQ 群 @ 消息、频道 @ 消息和私聊消息
