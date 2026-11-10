@@ -1,6 +1,12 @@
-# qqshell_agent
+# Native Server Agent
 
-一个极致轻量化的 QQ 机器人运维 Agent。用户在 QQ 里发送自然语言，DeepSeek 把它翻译成 shell 命令，并直接在宿主机上执行，再把结果回传到 QQ。
+一个基于 DeepSeek 和 QQ 官方 API 的极简、无沙盒、拥有长期记忆的服务器运维 Agent。
+
+## ✨ 特性
+- **极简原生**：拒绝臃肿的第三方框架，原生 Python 直连 DeepSeek API。
+- **完全放权**：没有沙盒限制，直接调用宿主机 Shell 执行命令。
+- **长期记忆**：通过本地 `agent_memory.md` 文件，永久记住你的工作区和习惯。
+- **多端适配**：原生支持 QQ 频道、群聊、私聊。
 
 > ⚠️ **安全警告**
 >
