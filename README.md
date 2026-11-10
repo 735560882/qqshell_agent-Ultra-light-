@@ -111,4 +111,4 @@ python agent.py
 
 ## 许可证
 
-本项目基于 [LICENSE](LICENSE) 文件中的协议发布。
+本项目基于 [MIT License](LICENSE) 开源，版权归 Fluxay 所有（2026）。
