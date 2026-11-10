@@ -25,10 +25,19 @@
 
 ## 安装
 
+### 方式一：一键脚本（Debian / Ubuntu）
+
 ```bash
 git clone https://github.com/735560882/qqshell_agent-ultra-light-.git
 cd qqshell_agent-ultra-light-
+bash install.sh
+```
 
+脚本会安装 Python 环境、创建 `venv` 虚拟环境并安装依赖。首次运行时会生成 `.env`，填写后再次执行 `bash install.sh` 即可后台启动，日志输出到 `agent.log`。
+
+### 方式二：手动安装
+
+```bash
 python -m venv .venv
 source .venv/bin/activate        # Windows 使用 .venv\Scripts\activate
 pip install -r requirements.txt
