@@ -26,13 +26,13 @@
    bash install.sh
    ```
    首次运行会生成 `.env`，然后脚本会提示你编辑它。
-4. **填写 `.env`**：填入 `APP_ID`、`APP_SECRET`、`DS_KEY`，`ADMIN_OPENID` 先留空。
+4. **填写 `.env`**：填入 `APP_ID`、`APP_SECRET`、`DS_KEY`，`ADMIN_OPENID` 先留空；`ADMIN_TOTP_SECRET` 按“二次认证”部分生成后填入。
 5. **获取你的 OpenID**：再次执行 `bash install.sh` 启动机器人，在群里或私聊中 @ 它发一条消息，然后查看日志：
    ```bash
    tail -f agent.log
    ```
    日志中会出现 `[AUTH] 拒绝未授权用户，OpenID: xxx`，把其中的 OpenID 复制到 `.env` 的 `ADMIN_OPENID`。
-6. **重启生效**：再次执行 `bash install.sh`。之后发送的消息就能被执行了。
+6. **重启生效**：再次执行 `bash install.sh`。然后私聊机器人发送 `#认证 动态码`，认证通过后即可下达指令。
 
 ## 功能
 
@@ -82,6 +82,34 @@ cp .env.example .env
 | `APP_SECRET` | QQ 机器人的 AppSecret |
 | `DS_KEY` | DeepSeek API Key |
 | `ADMIN_OPENID` | 允许使用机器人的用户 openid。**必须配置**，未配置时机器人会拒绝所有消息 |
+| `ADMIN_TOTP_SECRET` | 动态码种子。**必须配置**，未配置时无法完成认证 |
+
+## 🔐 二次认证（TOTP）
+
+每次重启后或认证超过 30 分钟，都需要先通过动态码认证，才能使用机器人。
+
+**1. 生成种子**（只需做一次）：
+
+```bash
+source venv/bin/activate
+python -c "import pyotp; print(pyotp.random_base32())"
+```
+
+把输出的字符串填入 `.env` 的 `ADMIN_TOTP_SECRET`。
+
+**2. 添加到验证器 App**（Google Authenticator、Microsoft Authenticator 等）：
+
+```bash
+python -c "import pyotp; print(pyotp.TOTP('你的种子').provisioning_uri(name='admin', issuer_name='qqshell_agent'))"
+```
+
+把输出的 `otpauth://` 链接转成二维码后扫描，或者直接在 App 里手动输入种子。
+
+**3. 认证**：在 **私聊** 机器人中发送 `#认证 123456`（123456 为当前动态码）。认证成功后 30 分钟内有效。
+
+> 认证指令只能在私聊中使用。如果在群里发送，机器人会拒绝并提醒你。动态码每 30 秒变化一次，即使被看到，也很快失效。
+>
+> 注意：动态码种子保存在 `.env` 中，Agent 理论上能读取它。回复中出现的 `APP_SECRET`、`DS_KEY`、`ADMIN_TOTP_SECRET` 会被自动替换为 `***`，但这不能完全防止泄露。
 
 `ADMIN_OPENID` 可以在机器人收到你的第一条消息后，从日志中获取。
 
@@ -97,8 +125,11 @@ python agent.py
 
 在 QQ 里 @ 你的机器人：
 
+- **先认证（私聊）**：`#认证 123456`
 - **植入记忆**：`@机器人 #记住 你的工作区在 /root/my_repo`
 - **下达指令**：`@机器人 查一下现在的内存占用`
+
+未认证时，除认证指令外的所有消息都会被拒绝。
 
 ## ⚠️ 安全警告
 
