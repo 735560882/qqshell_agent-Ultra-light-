@@ -1,0 +1,15 @@
+# 环境变量与密钥
+.env
+
+# 长期记忆（可能包含隐私信息）
+agent_memory.md
+
+# Python 缓存与虚拟环境
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# 系统文件
+.DS_Store
