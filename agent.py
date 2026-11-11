@@ -236,7 +236,7 @@ class MyAgent(botpy.Client):
                 return
 
             result = clean_command(raw)
-            print(f"\n[DEBUG] {sender_id} step {step} -> {redact(result)}")
+            print(f"\n[DEBUG] {sender_id} step {step} -> {redact(result)}", flush=True)
 
             if result.startswith("TEXT:"):
                 reply = result[5:].strip()
@@ -280,8 +280,11 @@ class MyAgent(botpy.Client):
         sender_id = getattr(message.author, 'member_openid', getattr(message.author, 'user_openid', ''))
         # 未配置 ADMIN_OPENID 时拒绝所有请求（fail closed），避免任何人都能让 root 权限的 Agent 执行命令
         if not ADMIN_OPENID or sender_id != ADMIN_OPENID:
-            # 把发送者的 OpenID 打印到日志，方便首次配置时获取
-            print(f"[AUTH] 拒绝未授权用户，OpenID: {sender_id}（如需授权，请填入 ADMIN_OPENID）")
+            # 把发送者的 OpenID 打印到日志，方便首次配置时获取；flush=True 保证立即写入 agent.log
+            if sender_id:
+                print(f"[AUTH] 拒绝未授权用户，OpenID: {sender_id}（如需授权，请填入 ADMIN_OPENID）", flush=True)
+            else:
+                print("[AUTH] 拒绝未授权用户，但本条消息没有 OpenID（频道消息不提供 OpenID，请改在群或私聊中发送）", flush=True)
             return
 
         state = {"seq": 0}
@@ -354,5 +357,5 @@ class MyAgent(botpy.Client):
 
 if __name__ == "__main__":
     intents = botpy.Intents(public_messages=True, public_guild_messages=True, direct_message=True)
-    print("🚀 Agent 启动...")
+    print("🚀 Agent 启动...", flush=True)
     MyAgent(intents=intents).run(appid=APP_ID, secret=APP_SECRET)
