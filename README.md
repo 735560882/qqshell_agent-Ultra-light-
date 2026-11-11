@@ -68,6 +68,26 @@ source .venv/bin/activate        # Windows 使用 .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+### 方式三：CentOS / RHEL / Rocky / AlmaLinux
+
+```bash
+git clone https://github.com/735560882/qqshell_agent-ultra-light-.git
+cd qqshell_agent-ultra-light-
+bash install_centos.sh
+```
+
+脚本使用 `yum`（CentOS 7）或 `dnf`（CentOS 8 及以后）安装 Python 3，要求 Python 3.9 或更高版本。
+
+如果系统自带的 Python 版本过低（例如 CentOS 7 默认的 3.6），脚本会直接报错。这时可以先安装较新的 Python，再指定解释器运行：
+
+```bash
+# CentOS 8 / Stream 示例，具体包名以你的系统仓库为准
+sudo dnf install -y python39
+PYTHON_BIN=python3.9 bash install_centos.sh
+```
+
+> 说明：这个脚本是在 Ubuntu 上按 CentOS 的命令习惯编写和检查的，还没有在真实的 CentOS 机器上完整跑过。遇到问题请把报错信息发给我。
+
 ## 配置
 
 复制配置模板并填写：
