@@ -122,7 +122,7 @@ python -c "import pyotp; print(pyotp.TOTP('你的种子').provisioning_uri(name=
 
 网页版完全离线运行，不发送任何网络请求，也不保存种子。关闭或刷新页面后需要重新输入种子。
 
-`ADMIN_OPENID` 可以在机器人收到你的第一条消息后，从日志中获取。
+`ADMIN_OPENID` 可以在机器人收到你的第一条消息后，从日志中获取（`tail -f agent.log`，找 `[AUTH]` 开头的那一行）。注意：频道消息不提供 OpenID，请在群聊或私聊中发送。
 
 ## 运行
 
