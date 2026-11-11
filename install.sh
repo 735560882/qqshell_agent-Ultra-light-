@@ -23,7 +23,9 @@ if [ ! -f .env ]; then
     echo "source venv/bin/activate && nohup venv/bin/python -u agent.py > agent.log 2>&1 &"
 else
     # 如果已有旧进程在运行，先停止，避免重复启动
-    pkill -f "venv/bin/python agent.py" 2>/dev/null || true
+    # 匹配 "python agent.py" 和 "python -u agent.py" 两种启动方式
+    pkill -f "python.*agent.py" 2>/dev/null || true
+    sleep 1
     # -u：关闭输出缓冲，否则 nohup 重定向到日志时 OpenID 等信息不会立即写入 agent.log
     nohup venv/bin/python -u agent.py > agent.log 2>&1 &
     echo "✅ 配置已存在，后台启动成功！"
