@@ -6,8 +6,10 @@ import os
 import re
 import subprocess
 import time
+import json
 import pyotp
 from openai import OpenAI
+from mcd import McdClient, McdError, parse_allowed_tools
 from botpy.message import Message
 from dotenv import load_dotenv
 
@@ -49,7 +51,9 @@ pending_cmds = {}
 busy = set()
 
 # 需要在回复中脱敏的敏感值
-SECRETS = [s for s in (APP_SECRET, DS_KEY, ADMIN_TOTP_SECRET) if s]
+MCD_TOKEN = os.getenv("MCD_TOKEN")
+MCD_ALLOWED_TOOLS = parse_allowed_tools(os.getenv("MCD_ALLOWED_TOOLS"))
+SECRETS = [s for s in (APP_SECRET, DS_KEY, ADMIN_TOTP_SECRET, MCD_TOKEN) if s]
 
 # 高危命令模式，命中则需要管理员回复 #确认 后才执行
 DANGER_PATTERNS = [
@@ -210,6 +214,52 @@ async def say(message, content, state):
     state["seq"] += 1
     await message.reply(content=content, msg_seq=state["seq"])
 
+MCD_USAGE = (
+    "麦当劳用法：\n"
+    "#麦当劳 工具                 列出平台工具（标注是否已允许）\n"
+    "#麦当劳 调用 工具名 {JSON}   调用已允许的工具，JSON 参数可省略\n"
+    "当前为第一阶段，仅支持查询，点餐功能开发中。"
+)
+_mcd_client = None
+
+def _get_mcd_client():
+    global _mcd_client
+    if not MCD_TOKEN:
+        raise McdError("未配置 MCD_TOKEN，请在 .env 中填写")
+    if _mcd_client is None:
+        _mcd_client = McdClient(MCD_TOKEN, allowed_tools=MCD_ALLOWED_TOOLS)
+    return _mcd_client
+
+def mcd_command(arg):
+    """处理 #麦当劳 指令，返回要发给用户的文本。同步函数，在线程中调用。"""
+    arg = arg.strip()
+    try:
+        if not arg:
+            return MCD_USAGE
+        if arg == "工具":
+            tools = _get_mcd_client().list_tools()
+            if not tools:
+                return "平台没有返回任何工具。"
+            lines = []
+            for t in tools:
+                mark = "✅" if t.get("name") in MCD_ALLOWED_TOOLS else "⬜"
+                desc = (t.get("description") or "").strip().replace("\n", " ")[:40]
+                lines.append(f"{mark} {t.get('name')}  {desc}")
+            return "平台工具（✅ 已允许调用）：\n" + "\n".join(lines)
+        if arg.startswith("调用"):
+            parts = arg[len("调用"):].strip().split(maxsplit=1)
+            if not parts:
+                return "用法：#麦当劳 调用 工具名 {JSON}"
+            name = parts[0]
+            try:
+                args = json.loads(parts[1]) if len(parts) > 1 else {}
+            except json.JSONDecodeError:
+                return "参数不是合法的 JSON。"
+            return _get_mcd_client().call_tool(name, args)
+        return MCD_USAGE
+    except McdError as e:
+        return f"❌ {e}"
+
 class MyAgent(botpy.Client):
     async def step_exec(self, message, cmd, messages, state):
         """执行一条命令，把结果告诉管理员，并把结果追加到大模型上下文中。"""
@@ -336,6 +386,12 @@ class MyAgent(botpy.Client):
         if user_msg == "#取消":
             pending_cmds.pop(sender_id, None)
             await say(message, "已取消。", state)
+            return
+
+        # 麦当劳查询：直接调用白名单工具，不经过大模型，也不经过 shell
+        if user_msg.startswith("#麦当劳"):
+            reply = await asyncio.to_thread(mcd_command, user_msg[len("#麦当劳"):])
+            await say(message, redact(reply)[-OUTPUT_LIMIT:], state)
             return
 
         if user_msg.startswith("#记住") or user_msg.startswith("记住"):
