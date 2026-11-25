@@ -2,3 +2,4 @@ qq-botpy
 openai
 python-dotenv
 pyotp
+httpx
